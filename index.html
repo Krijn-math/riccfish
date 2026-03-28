@@ -842,7 +842,7 @@
     const onEnter = (e) => {
       if (e.key === 'Enter') { document.removeEventListener('keydown', onEnter); nextArticle(); }
     };
-    document.addEventListener('keydown', onEnter);
+    setTimeout(() => document.addEventListener('keydown', onEnter), 0);
 
     ['guess-input','btn-guess','btn-skip'].forEach(id => {
       const el = document.getElementById(id);
