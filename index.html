@@ -427,6 +427,7 @@
   let guessNumber   = 1;
   let articleScores = []; // [{title, points, outcome}]
   let secondParaCache = null;
+  let gameState     = 'idle'; // 'guessing' | 'revealed'
 
   // ── Storage ────────────────────────────────────────────────────────────────
 
@@ -632,6 +633,7 @@
   function startArticle() {
     guessNumber = 1;
     secondParaCache = null;
+    gameState = 'guessing';
     renderProgressBar();
     renderArticle();
   }
@@ -682,7 +684,7 @@
 
     const input = document.getElementById('guess-input');
     input.focus();
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') submitGuess(); });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.stopPropagation(); submitGuess(); } });
   }
 
   function submitGuess() {
@@ -839,10 +841,7 @@
   function endArticle(outcome, points, message) {
     const art = gameArticles[articleIndex];
 
-    const onEnter = (e) => {
-      if (e.key === 'Enter') { document.removeEventListener('keydown', onEnter); nextArticle(); }
-    };
-    setTimeout(() => document.addEventListener('keydown', onEnter), 0);
+    gameState = 'revealed';
 
     ['guess-input','btn-guess','btn-skip'].forEach(id => {
       const el = document.getElementById(id);
@@ -867,7 +866,7 @@
     document.getElementById('end-feedback').innerHTML = `
       <div class="feedback ${outcome === 'correct' ? 'correct' : outcome === 'skip' ? 'skipped' : 'wrong'}">${message}</div>
       <div class="post-actions">
-        <button class="btn-primary" onclick="nextArticle()">
+        <button class="btn-primary" id="btn-next-article" onclick="nextArticle()">
           ${articleIndex + 1 < ARTICLES_PER_DAY ? 'Next article →' : 'See results →'}
         </button>
         ${art.wiki_url ? `<a class="wiki-link" href="${art.wiki_url}" target="_blank">Wikipedia ↗</a>` : ''}
@@ -924,6 +923,10 @@
     document.getElementById('loading-overlay').style.display = 'none';
     showHome();
   }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && gameState === 'revealed') nextArticle();
+  });
 
   init();
 </script>
