@@ -489,11 +489,15 @@
   ]);
 
   // level 0 = fully blurred, 1 = first letter visible, 2 = first letter of each word visible
-  function titleHintHTML(title, level) {
+  function updateTitleHint(title, level) {
+    const el = document.getElementById('title-display');
+    if (!el) return;
     if (level === 0) {
-      return `<div id="title-display" class="blurred-title">${title}</div>`;
+      el.className = 'blurred-title';
+      el.textContent = title;
+      return;
     }
-    let html = '<div id="title-display" class="title-hint">';
+    let html = '';
     let wordStart = true;
     let titleStart = true;
     for (const ch of title) {
@@ -507,7 +511,8 @@
       wordStart = false;
       titleStart = false;
     }
-    return html + '</div>';
+    el.className = 'title-hint';
+    el.innerHTML = html;
   }
 
   function censorExtract(extract, title) {
@@ -675,7 +680,7 @@
   }
 
   function renderProgressBar() {
-    const total = ARTICLES_PER_DAY;
+    const total = gameArticles.length;
     document.getElementById('progress-label').textContent =
       `${monthName(MONTH)} ${selectedDay} — Article ${articleIndex + 1} of ${total}`;
 
@@ -703,7 +708,7 @@
 
     document.getElementById('game').innerHTML = `
       <div id="infobox-slot"></div>
-      ${titleHintHTML(art.title, 0)}
+      <div id="title-display" class="blurred-title">${art.title}</div>
       <div class="extract">${censored}</div>
       <div id="second-para"></div>
       <div style="clear:both"></div>
@@ -759,8 +764,7 @@
     if (guessNumber === 3) revealInfobox();
 
     // Update title hint: guess 2 → first letter, guess 3 → first letter of each word
-    const titleDisplay = document.getElementById('title-display');
-    if (titleDisplay) titleDisplay.outerHTML = titleHintHTML(gameArticles[articleIndex].title, guessNumber - 1);
+    updateTitleHint(gameArticles[articleIndex].title, guessNumber - 1);
 
     input.focus();
   }
@@ -892,7 +896,7 @@
 
     // Unblur title and uncensor text
     const titleEl = document.getElementById('title-display');
-    if (titleEl) titleEl.outerHTML = `<div id="title-display" class="title-hint">${art.title}</div>`;
+    if (titleEl) { titleEl.className = 'title-hint'; titleEl.textContent = art.title; }
 
     const extractEl = document.querySelector('.extract');
     if (extractEl) extractEl.innerHTML = art.extract;
@@ -907,7 +911,7 @@
       <div class="feedback ${outcome === 'correct' ? 'correct' : outcome === 'skip' ? 'skipped' : 'wrong'}">${message}</div>
       <div class="post-actions">
         <button class="btn-primary" id="btn-next-article" onclick="nextArticle()">
-          ${articleIndex + 1 < ARTICLES_PER_DAY ? 'Next article →' : 'See results →'}
+          ${articleIndex + 1 < gameArticles.length ? 'Next article →' : 'See results →'}
         </button>
         ${art.wiki_url ? `<a class="wiki-link" href="${art.wiki_url}" target="_blank">Wikipedia ↗</a>` : ''}
       </div>
@@ -916,7 +920,7 @@
 
   function nextArticle() {
     articleIndex++;
-    if (articleIndex >= ARTICLES_PER_DAY) {
+    if (articleIndex >= gameArticles.length) {
       finishDay();
     } else {
       startArticle();
@@ -967,7 +971,7 @@
   }
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && gameState === 'revealed') nextArticle();
+    if (e.key === 'Enter' && gameState === 'revealed' && e.target.tagName !== 'BUTTON') nextArticle();
   });
 
   init();
